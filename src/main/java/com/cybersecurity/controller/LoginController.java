@@ -2,8 +2,13 @@ package com.cybersecurity.controller;
 
 import com.cybersecurity.dto.FormDTO;
 import com.cybersecurity.dto.PasswordDTO;
+import com.cybersecurity.entity.UserSession;
+import com.cybersecurity.repository.LoginRepository;
+import com.cybersecurity.repository.UserRepository;
+import com.cybersecurity.repository.UserSessionRepository;
 import com.cybersecurity.service.JWTService;
 import com.cybersecurity.service.LoginService;
+import com.cybersecurity.service.SessionService;
 import com.cybersecurity.util.ValidateForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +29,8 @@ public class LoginController {
     LoginService loginService;
     @Autowired
     private JWTService jwtService;
-
+    @Autowired
+    private SessionService sessionService;
     @PostMapping("api/login/layer1")
     @ResponseBody
     public ResponseEntity<List<String>> layer1processing(@RequestBody FormDTO form){
@@ -82,23 +89,15 @@ public class LoginController {
         }
         else {
             String token="";
+            String sessionID=sessionService.createSession(username);
+            System.out.println(sessionID);
             try{
-                token=jwtService.generateToken(username);
-//                Cookie cookie=new Cookie("user",token);
-//                cookie.setPath("/");
-//                System.out.println(token);
-//                response.addCookie(cookie);
-                ResponseCookie resCookie = ResponseCookie.from("user",token)
-                        .httpOnly(true)
-                        .sameSite("None")
-                        .secure(true)
-                        .path("/")
-                        .build();
-                response.addHeader("Set-Cookie", resCookie.toString());
+                token=jwtService.generateToken(username+"_"+sessionID);
             }catch (Exception e){
                 e.printStackTrace();
             }
             res.add(token);
+
             return new ResponseEntity<>(res,HttpStatus.OK);
         }
     }
@@ -108,8 +107,23 @@ public class LoginController {
         return new ResponseEntity<>("Logged in",HttpStatus.OK);
     }
     @PostMapping("api/logout")
-    public void logout(HttpServletResponse response){
-        Cookie cookie=new Cookie("user","");
-        response.addCookie(cookie);
+    public void logout(ServletRequest servletRequest){
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        String token= request.getHeader("Authorization");
+        String decodeString=jwtService.decode(token);
+        String sessionID=decodeString.split("_")[1];
+        System.out.println(sessionID);
+        sessionService.deleteSession(sessionID);
     }
+    @Autowired
+    UserSessionRepository userSessionRepository;
+    @Autowired
+    LoginRepository loginRepository;
+    @GetMapping("test")
+    @ResponseBody
+    public ResponseEntity<String> ets(ServletRequest servletRequest){
+        loginRepository.createSession("sdfsf","giang");
+        return new ResponseEntity<>(userSessionRepository.findAll().toString(),HttpStatus.OK);
+    }
+
 }

@@ -4,6 +4,7 @@ package com.cybersecurity.filter;
 
 import com.cybersecurity.repository.UserRepository;
 import com.cybersecurity.service.JWTService;
+import com.cybersecurity.service.SessionService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,8 @@ public class AuthorizationFilter implements Filter {
     private UserRepository userRepository;
     @Autowired
     private JWTService jwtService;
+    @Autowired
+    SessionService sessionService;
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
@@ -38,18 +41,19 @@ public class AuthorizationFilter implements Filter {
         response.setHeader("Access-Control-Allow-Headers",
                 "Origin, X-Requested-With, Content-Type, Accept, Key, Authorization");
 
-        System.out.println(request.getHeader("Authorization"));
         if(!request.getRequestURL().toString().contains("/data/")){
             filterChain.doFilter(request,response);
         }
             String token= request.getHeader("Authorization");
             if(token!=null){
-                System.out.println(jwtService.decode(token));
-                String username=jwtService.decode(token);
-                boolean userexist=userRepository.existsByUsername(username);
+                String decodeString=jwtService.decode(token);
+                String username=decodeString.split("_")[0];
+                String sessionID=decodeString.split("_")[1];
+                System.out.println(sessionID);
+                boolean userexist=sessionService.checkSession(sessionID,username);
                 if(userexist)
                     filterChain.doFilter(request,response);
-
+                else response.setStatus(406);
         }
     }
 

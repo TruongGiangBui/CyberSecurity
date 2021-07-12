@@ -29,7 +29,9 @@ public class ValidateForm {
         return 0;
     }
     public static int validatelayer3(List<String> pieces){
-        Pattern pattern=Pattern.compile("^(res)[0-9]*-[0-9]*\\.jpg");
+
+        Pattern pattern=Pattern.compile("^(res)[0-9]*-[0-9]*-[0-9]*");
+        System.out.println(pattern.matcher(pieces.get(0)).matches());
         for(String piece:pieces){
             if(piece.equals("")) return 3;
             else if(!pattern.matcher(piece).matches()) return 3;

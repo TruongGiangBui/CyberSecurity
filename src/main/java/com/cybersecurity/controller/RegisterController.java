@@ -72,14 +72,16 @@ public class RegisterController {
     @PostMapping("api/register/layer3")
     @ResponseBody
     public ResponseEntity<String> layer3processing(@RequestBody List<String> pieces){
-        Integer result=registerService.layer3processing(pieces);
-        registerService.close();
+
         String err;
         int validate=ValidateForm.validatelayer3(pieces);
+        System.out.println(validate);
         if(validate!=0){
             err=ValidateForm.messages.get(validate);
             return new ResponseEntity<>(err,HttpStatus.NOT_ACCEPTABLE);
         }
+        Integer result=registerService.layer3processing(pieces);
+        registerService.close();
         if(result.equals(0)){
             return new ResponseEntity<>(HttpStatus.OK);
         }else {
